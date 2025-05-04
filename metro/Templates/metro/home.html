@@ -1,0 +1,35 @@
+{% extends "metro/base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded-lg">
+    <h1 class="display-4">Welcome to Metro Rail!</h1>
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Book Tickets</h5>
+                    <a href="{% url 'search_routes' %}" class="btn btn-primary">Start Journey</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Check Fares</h5>
+                    <a href="{% url 'fare_checker' %}" class="btn btn-info">Calculate Fare</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">View Schedules</h5>
+                    <a href="{% url 'metro_schedules' %}" class="btn btn-success">View Timetable</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

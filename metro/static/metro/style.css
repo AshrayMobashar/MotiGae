@@ -1,0 +1,61 @@
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.station-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #007bff;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.route-line {
+    border-left: 4px solid #007bff;
+    height: 40px;
+    margin-left: 8px;
+}
+
+.fare-card {
+    transition: transform 0.3s;
+}
+
+.fare-card:hover {
+    transform: translateY(-5px);
+}
+
+.offer-card {
+    border-left: 5px solid #ffc107;
+}
+
+/* Form styling */
+.form-control {
+    margin-bottom: 10px;
+}
+
+/* Error message styling */
+.text-danger {
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* Card styling */
+.card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
