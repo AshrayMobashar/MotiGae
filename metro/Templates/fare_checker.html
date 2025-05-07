@@ -1,0 +1,42 @@
+{% extends 'metro/base.html' %}
+
+{% block title %}Fare Checker{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Check Metro Fare</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="{{ form.from_station.id_for_label }}" class="form-label">From Station:</label>
+                {{ form.from_station }}
+                {% if form.from_station.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.from_station.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.to_station.id_for_label }}" class="form-label">To Station:</label>
+                {{ form.to_station }}
+                {% if form.to_station.errors %}
+                    <div class="alert alert-danger">
+                        {{ form.to_station.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary">Check Fare</button>
+        </form>
+
+        {% if fare %}
+            <div class="mt-4 alert alert-success">
+                The fare from {{ fare.from_station.name }} to {{ fare.to_station.name }} is:
+                <strong>৳{{ fare.amount }}</strong>
+            </div>
+        {% elif error %}
+            <div class="mt-4 alert alert-danger">
+                {{ error }}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

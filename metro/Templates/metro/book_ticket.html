@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Ticket</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'metro/styles.css' %}">
+    <style>
+        /* Basic styling - replace with your desired look */
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        h2 { color: #333; margin-bottom: 20px; }
+        .trip-details { margin-bottom: 15px; }
+        .form-group { margin-bottom: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="number"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Confirm Your Booking</h2>
+        <div class="trip-details">
+            <h3>Trip Information:</h3>
+            <p><strong>From:</strong> {{ from_station.name }}</p>
+            <p><strong>To:</strong> {{ to_station.name }}</p>
+            <p><strong>Departure Time:</strong> {{ trip.departure_time }}</p>
+            <p><strong>Arrival Time:</strong> {{ trip.arrival_time }}</p>
+            <p><strong>Fare per Ticket:</strong> {{ fare }}</p>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="{{ form.num_tickets.id_for_label }}">Number of Tickets:</label>
+                {{ form.num_tickets }}
+            </div>
+            <button type="submit">Book Now</button>
+        </form>
+    </div>
+</body>
+</html>

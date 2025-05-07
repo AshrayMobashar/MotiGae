@@ -19,5 +19,4 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('login/', auth_views.LoginView.as_view(template_name='metro/login.html'), name='login'),
     path('profile/', views.profile_view, name='profile'),
-    
 ]

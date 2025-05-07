@@ -1,0 +1,35 @@
+{% extends 'metro/base.html' %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>Search Results</h2>
+        {% if schedules %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Train</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Time</th>
+                        <th>Frequency</th>
+                        <th>Status</th>
+                        </tr>
+                </thead>
+                <tbody>
+                    {% for schedule in schedules %}
+                        <tr>
+                            <td>{{ schedule.train.name }}</td>
+                            <td>{{ schedule.departure_time }}</td>
+                            <td>{{ schedule.arrival_time }}</td>
+                            <td>{{ schedule.frequency }} mins</td>
+                            <td>{{ schedule.status }}</td>
+                            </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No schedules found matching your criteria.</p>
+        {% endif %}
+    </div>
+{% endblock %}

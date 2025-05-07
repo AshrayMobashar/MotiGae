@@ -29,28 +29,56 @@ from .models import User, Station, Route, Trip, Ticket
 from .forms import ProfileForm, TicketForm, LoginForm
 from django.contrib.auth import logout as auth_logout
 from django.shortcuts import redirect
-# metro/views.py
 from django.contrib.auth.forms import UserCreationForm
-from .forms import CustomUserCreationForm  # You'll need to create this
-from .models import User  # Import your custom user model
+from .forms import CustomUserCreationForm  
+from .models import User 
 from .forms import UserRegistrationForm
+from .models import Schedule
+from django.contrib.auth import authenticate, login
+from .forms import RouteSearchForm 
 
 def register(request):
     if request.method == 'POST':
-        form = UserRegistrationForm(request.POST, request.FILES)
+        form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
             return redirect('home')
     else:
-        form = UserRegistrationForm()
+        form = UserCreationForm()
     return render(request, 'metro/register.html', {'form': form})
+
+def user_login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+    return render(request, 'metro/login.html')
+
+def metro_schedules(request):
+    schedules = Schedule.objects.all()
+    return render(request, 'metro/schedules.html', {'schedules': schedules})
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    else:
+        form = ProfileForm(instance=request.user)
+    return render(request, 'metro/profile.html', {'form': form})
 
 @login_required
 def profile_view(request):
     return render(request, 'metro/profile.html', {
         'user': request.user
     })
+
 
 def register(request):
     if request.method == 'POST':
@@ -111,56 +139,61 @@ def ride_history(request):
     return render(request, 'ride_history.html', {'tickets': tickets})
 
 def search_routes(request):
-    if request.method == 'POST':
-        form = RouteSearchForm(request.POST)
-        if form.is_valid():
-            from_station = form.cleaned_data['from_station']
-            to_station = form.cleaned_data['to_station']
-            date = form.cleaned_data['date']
-            
-            # Find routes that include both stations
-            routes = Route.objects.filter(
-                routestation__station=from_station
-            ).filter(
-                routestation__station=to_station
-            ).distinct()
-            
-            # Get trips for these routes
-            trips = []
+    form = RouteSearchForm(request.POST or None)
+    trips = []  # Initialize an empty list for trips
+
+    if request.method == 'POST' and form.is_valid():
+        from_station = form.cleaned_data['from_station']
+        to_station = form.cleaned_data['to_station']
+        date = form.cleaned_data['date']
+        selected_train = form.cleaned_data.get('train')  # Get the optional train
+
+        if selected_train:
+            current_location = selected_train.current_location
+            route = selected_train.route
+
+            if current_location == from_station:
+                # Find the order of from_station and to_station on the train's route
+                try:
+                    from_rs = RouteStation.objects.get(route=route, station=from_station)
+                    to_rs = RouteStation.objects.get(route=route, station=to_station)
+                    if from_rs.order < to_rs.order:
+                        route_trips = Trip.objects.filter(
+                            route=route.name,  # Assuming Trip.route is CharField
+                            departure_time__date=date,
+                            status='scheduled'
+                        ).filter(departure_time__gte=timezone.now())  # Consider current time
+                        # Further filter trips based on the sequence of stations if needed
+                        trips = [{'trip': trip, 'fare': Fare.objects.filter(from_station=from_station, to_station=to_station).first().amount if Fare.objects.filter(from_station=from_station, to_station=to_station).first() else 0, 'from_station': from_station, 'to_station': to_station, 'departure_time': trip.departure_time, 'arrival_time': trip.arrival_time} for trip in route_trips]
+                except RouteStation.DoesNotExist:
+                    pass  # Stations not on the same route or incorrect order
+
+        else:
+            # Original logic to search by from and to station (if no train selected)
+            valid_routes = []
+            routes = Route.objects.filter(routestation__station=from_station).filter(routestation__station=to_station).distinct()
             for route in routes:
+                from_rs = route.routestation_set.filter(station=from_station).first()
+                to_rs = route.routestation_set.filter(station=to_station).first()
+                if from_rs and to_rs and from_rs.order < to_rs.order:
+                    valid_routes.append(route)
+            for route in valid_routes:
                 route_trips = Trip.objects.filter(
-                    train__route=route,
+                    route=route.name,  # Assuming Trip.route is CharField
                     departure_time__date=date,
                     status='scheduled'
                 )
-                for trip in route_trips:
-                    # Calculate fare
-                    try:
-                        fare = Fare.objects.get(
-                            from_station=from_station,
-                            to_station=to_station
-                        ).amount
-                    except Fare.DoesNotExist:
-                        fare = 0
-                    
-                    trips.append({
-                        'trip': trip,
-                        'fare': fare,
-                        'from_station': from_station,
-                        'to_station': to_station,
-                        'departure_time': trip.departure_time,
-                        'arrival_time': trip.arrival_time,
-                    })
-            
-            return render(request, 'search_results.html', {
-                'trips': trips,
-                'from_station': from_station,
-                'to_station': to_station,
-                'date': date,
-            })
+                trips.extend([{'trip': trip, 'fare': Fare.objects.filter(from_station=from_station, to_station=to_station).first().amount if Fare.objects.filter(from_station=from_station, to_station=to_station).first() else 0, 'from_station': from_station, 'to_station': to_station, 'departure_time': trip.departure_time, 'arrival_time': trip.arrival_time} for trip in route_trips])
+
+        return render(request, 'search_results.html', {
+            'form': form,  # Pass the form back to the template (even after submission)
+            'trips': trips,
+            'from_station': from_station,
+            'to_station': to_station,
+            'date': date,
+        })
     else:
-        form = RouteSearchForm()
-    return render(request, 'search_routes.html', {'form': form})
+        return render(request, 'metro/search_routes.html', {'form': form})
 
 @login_required
 def fare_checker(request):
@@ -180,11 +213,6 @@ def fare_checker(request):
     else:
         form = FareCheckForm()
     return render(request, 'fare_checker.html', {'form': form})
-
-def metro_schedules(request):
-    routes = Route.objects.all().prefetch_related('routestation_set__station')
-    return render(request, 'schedules.html', {'routes': routes})
-
 @login_required
 def book_ticket(request, trip_id, from_station_id, to_station_id):
     trip = Trip.objects.get(id=trip_id)

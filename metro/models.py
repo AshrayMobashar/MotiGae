@@ -1,24 +1,9 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User 
+#from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
-
-class User(AbstractUser):
-    USER_TYPE_CHOICES = (
-        (1, 'Admin'),
-        (2, 'Staff'),
-        (3, 'Passenger'),
-    )
-    user_type = models.PositiveSmallIntegerField(choices=USER_TYPE_CHOICES, default=3)
-    phone = models.CharField(max_length=15, blank=True)
-    address = models.TextField(blank=True)
-    points = models.IntegerField(default=0)
-    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True)
-    
-    def __str__(self):
-        return self.username
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Station(models.Model):
     name = models.CharField(max_length=100)
@@ -52,17 +37,33 @@ class RouteStation(models.Model):
     def __str__(self):
         return f"{self.route.name} - {self.station.name} (Order: {self.order})"
 
+from django.db import models
+
 class Train(models.Model):
     name = models.CharField(max_length=100)
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     capacity = models.PositiveIntegerField()
     current_location = models.ForeignKey(Station, on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     def __str__(self):
         return f"{self.name} ({self.route.name})"
 
+class Schedule(models.Model):
+    train = models.ForeignKey(Train, on_delete=models.CASCADE, null=True)
+    departure_time = models.TimeField()
+    arrival_time = models.TimeField()
+    frequency = models.IntegerField(help_text="Frequency in minutes")
+    status = models.CharField(max_length=20, default='Scheduled', choices=[
+        ('scheduled', 'Scheduled'),
+        ('delayed', 'Delayed'),
+        ('cancelled', 'Cancelled'),
+    ])
+
+    def __str__(self):
+        return f"{self.train.name} (Departs: {self.departure_time})"
+
 class Trip(models.Model):
-    train = models.ForeignKey(Train, on_delete=models.CASCADE)
+    route = models.CharField(max_length=100)
     departure_time = models.DateTimeField()
     arrival_time = models.DateTimeField()
     available_seats = models.PositiveIntegerField()
@@ -72,9 +73,9 @@ class Trip(models.Model):
         ('arrived', 'Arrived'),
         ('cancelled', 'Cancelled'),
     ), default='scheduled')
-    
+
     def __str__(self):
-        return f"{self.train.name} - {self.departure_time}"
+        return f"{self.route} - {self.departure_time}"
 
 class Fare(models.Model):
     from_station = models.ForeignKey(Station, related_name='from_fares', on_delete=models.CASCADE)
@@ -85,11 +86,11 @@ class Fare(models.Model):
         unique_together = ('from_station', 'to_station')
     
     def __str__(self):
-        return f"{self.from_station.code} to {self.to_station.code}: ${self.amount}"
+        return f"{self.from_station.code} to {self.to_station.code}: ৳{self.amount}"
 
 class Ticket(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    trip = models.ForeignKey(Trip, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='purchased_tickets')
+    trip = models.ForeignKey(Trip, on_delete=models.CASCADE, related_name='tickets_for_trip')
     purchase_date = models.DateTimeField(auto_now_add=True)
     seat_number = models.CharField(max_length=10)
     fare = models.DecimalField(max_digits=6, decimal_places=2)
@@ -98,7 +99,7 @@ class Ticket(models.Model):
         ('cancelled', 'Cancelled'),
         ('used', 'Used'),
     ), default='booked')
-    
+
     def __str__(self):
         return f"Ticket #{self.id} - {self.user.username}"
 
@@ -128,3 +129,23 @@ class Offer(models.Model):
     
     def __str__(self):
         return self.name
+    
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    phone = models.CharField(max_length=15, blank=True)
+    address = models.TextField(blank=True)
+    points = models.IntegerField(default=0)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True)
+    
+    def __str__(self):
+        return f"{self.user.username}'s Profile"
+    
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()

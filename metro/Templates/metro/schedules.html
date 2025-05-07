@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../../static/metro/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metro Schedules</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top */
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 20px; /* Add some top padding */
+        }
+        .schedule-container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 80%; /* Adjust width as needed */
+            max-width: 960px;
+        }
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-scheduled {
+            color: green;
+            font-weight: bold;
+        }
+        .status-delayed {
+            color: orange;
+            font-weight: bold;
+        }
+        .status-cancelled {
+            color: red;
+            font-weight: bold;
+        }
+        .no-schedules {
+            text-align: center;
+            font-style: italic;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="schedule-container">
+        <h1>Metro Schedules</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Train Name</th>
+                    <th>Route</th>
+                    <th>Departure</th>
+                    <th>Arrival</th>
+                    <th>Frequency</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                    <tr>
+                        <td>{{ schedule.train.name }}</td>
+                        <td>{{ schedule.train.route.name }}</td>
+                        <td>{{ schedule.departure_time|time:"g:i a" }}</td>
+                        <td>{{ schedule.arrival_time|time:"g:i a" }}</td>
+                        <td>{{ schedule.frequency }} mins</td>
+                        <td class="status-{{ schedule.status }}">{{ schedule.status|capfirst }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="no-schedules">No schedules available.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

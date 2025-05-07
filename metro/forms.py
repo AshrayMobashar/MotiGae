@@ -2,20 +2,17 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth import get_user_model
 from .models import Station, Fare, Offer, Ticket
+from django.contrib.auth.models import User
+from django import forms
+from .models import Station, Train
 
 User = get_user_model()
 
 class UserRegistrationForm(UserCreationForm):
-    email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=15, required=False)
-    address = forms.CharField(widget=forms.Textarea, required=False)
-    profile_picture = forms.ImageField(required=False)
-
-    class Meta:
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ['username', 'email', 'password1', 'password2', 
-                 'first_name', 'last_name', 'phone', 'address', 'profile_picture']
-
+        fields = UserCreationForm.Meta.fields + ('email',)
+        
 class CustomUserCreationForm(UserCreationForm):
     class Meta:
         model = User
@@ -24,7 +21,7 @@ class CustomUserCreationForm(UserCreationForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'address', 'profile_picture']
+        fields = ['username', 'email', 'first_name', 'last_name', ]
 
 class TicketForm(forms.ModelForm):
     class Meta:
@@ -44,22 +41,28 @@ class UserProfileForm(UserChangeForm):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'phone', 'address', 'profile_picture']
-        widgets = {
-            'address': forms.Textarea(attrs={'rows': 3}),
-        }
+        fields = ['username', 'email', 'first_name', 'last_name']
 
 class RouteSearchForm(forms.Form):
     from_station = forms.ModelChoiceField(
         queryset=Station.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='From Station:'
     )
-    to_station = forms.ModelChoiceField(  # Fixed typo
+    to_station = forms.ModelChoiceField(
         queryset=Station.objects.all(),
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='To Station:'
     )
     date = forms.DateField(
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Date of Travel:'
+    )
+    train = forms.ModelChoiceField(
+        queryset=Train.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=False,
+        label='Search by Train (Optional):'
     )
 
 class FareCheckForm(forms.Form):
